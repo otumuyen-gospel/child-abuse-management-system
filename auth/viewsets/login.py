@@ -34,7 +34,7 @@ class LoginViewSet(ViewSet):
     and also login the admin account once created
     '''
     def account_wizard(self, request):
-        if not User.objects.exists():  #if no user exists create the admin user
+        if not User.objects.all().exists():  #if no user exists create the admin user
             self.create_permissions()
             self.create_admin_Role()
             agency = self.create_admin_agency(request)
@@ -60,7 +60,7 @@ class LoginViewSet(ViewSet):
     def create_admin_agency(self, request):
         if not Agency.objects.all():
             agency = Agency.objects.create(
-                name=request.data['CAMS'],
+                name='CAMS',
                 address='Company Address',
                 description='Child Abuse Database Management System '
             )
