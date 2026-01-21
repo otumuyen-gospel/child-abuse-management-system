@@ -6,10 +6,16 @@ from .serializers.otp import (PasswordResetRequestSerializer,
                               OTPVerificationSerializer, 
                               PasswordResetSerializer)
 from .serializers.logentry import LogEntrySerializer
+from .serializers.register import SignupSerializer
 from rest_framework import generics
 from auditlog.models import LogEntry
 from rest_framework.permissions import IsAuthenticated, IsAdminUser,AllowAny
 from user.permissions import IsInGroup
+from django.contrib.auth.models import Group
+from role.models import Role
+from message import EmailService
+from agency.models import Agency
+from person.models import Person
 
 
 '''
@@ -79,3 +85,72 @@ class LogEntryViews(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsInGroup]
     #required_groups = ['admin',]
     name = 'user-logs'
+
+
+class ReporterSignupView(generics.CreateAPIView):
+    permission_classes = [AllowAny,]
+    serializer_class = SignupSerializer
+    name='reporter-signup'
+    def create(self, request, *args, **kwargs):
+        role = Role.objects.get(name='reporter')
+        print(role.id)
+        if not role:
+            return Response(
+                {'error':'No reporter role found, contact admin'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if (not request.data.get('firstName') and not request.data.get('lastName')) and \
+            (not request.data.get('middleName') and not request.data.get('maidenName')) and \
+                (not request.data.get('dob') and not request.data.get('phone')) and \
+            (not request.data.get('email') and not request.data.get('entranceDate')) and \
+            not request.data.get('gender'):
+            return Response(
+                {'error':'username, password, firstName, lastName, middleName, maidenName, dob, phone, email, entranceDate, gender are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        person = Person.objects.create(
+            firstName=request.data.get('firstName'),
+            lastName=request.data.get('lastName'),
+            middleName=request.data.get('middleName'),
+            maidenName=request.data.get('maidenName'),
+            dob=request.data.get('dob'),
+            phone =request.data.get('phone'),
+            email = request.data.get('email'),
+            entranceDate=request.data.get('entranceDate'),
+            gender = request.data.get('gender'),
+
+        )
+        serializer = self.serializer_class(data=request.data)
+        serializer.personId = person.id
+        serializer.roleId = role.id
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        '''check if user is added to a group otherwise 
+        fetch user choosen group and add user to the group
+        '''
+        group = Group.objects.get(name=role.name)
+        user.groups.add(group)
+
+        '''token based authentication instead of 
+        direct session, cookie access management
+        '''
+        refresh = RefreshToken.for_user(user) 
+        res = {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            }
+        
+        
+        # In your user registration view
+        EmailService.send_welcome_email(
+         user_email=request.data['email'],
+         user_name=request.data['username'],
+         agency_name=Agency.objects.first().name,
+         roles = role.permissions.split(',')
+        )
+        
+        return Response({"user": serializer.data,
+                         "refresh": res["refresh"],
+                         "token": res["access"]
+                         }, status=status.HTTP_201_CREATED)

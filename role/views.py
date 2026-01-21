@@ -22,7 +22,7 @@ from user.permissions import IsInGroup
 class RoleList(generics.ListAPIView):
     queryset = Role.objects.all()
     serializer_class = RoleSerializers
-    permission_classes = [IsAuthenticated, IsInGroup,]
+    permission_classes = [IsAuthenticated,IsInGroup]
     required_groups = requiredGroups(permission='view_role')
     name = 'role-list'
 

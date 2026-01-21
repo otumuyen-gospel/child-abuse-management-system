@@ -71,18 +71,18 @@ class EmailService:
         return email.send()
 
     @staticmethod
-    def send_welcome_email(user_email, user_name, church_name, roles):
+    def send_welcome_email(user_email, user_name, agency_name, roles):
         """Send welcome email to new user."""
         context = {
             'user_name': user_name,
-            'church_name': church_name,
+            'agency_name': agency_name,
             'roles':roles,
             'site_url': settings.SITE_URL,
             'logo_url': EmailService.get_image_url('logo.jpg'),
         }
         
         return EmailService.send_email(
-            subject=f"Welcome to {church_name} Attendance System",
+            subject=f"Welcome to {agency_name} Attendance System",
             template_name='emails/welcome.html',
             context=context,
             recipient_list=[user_email]
