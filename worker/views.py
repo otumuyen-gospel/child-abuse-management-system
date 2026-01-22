@@ -37,21 +37,35 @@ class WorkerList(generics.ListAPIView):
     ordering_fields =  ('personId__id','agencyId__id','contactId__id',) 
 
 
-class UpdateW(generics.UpdateAPIView):
+class UpdateWorker(generics.UpdateAPIView):
     queryset = Worker.objects.all()
     serializer_class = WorkerSerializers
     permission_classes = [IsAuthenticated, IsInGroup,]
     required_groups = requiredGroups(permission='change_worker')
     name = 'worker-update'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj.personId.id == self.request.user.personId.id:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")
 
-class Delete(generics.DestroyAPIView):
+class DeleteWorker(generics.DestroyAPIView):
     queryset = Worker.objects.all()
     serializer_class = WorkerSerializers
     permission_classes = [IsAuthenticated, IsInGroup,]
     required_groups = requiredGroups(permission='delete_worker')
     name = 'worker-delete'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj.personId.id == self.request.user.personId.id:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")
 
 class CreateWorker(generics.CreateAPIView):
     queryset = Worker.objects.all()

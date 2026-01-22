@@ -45,6 +45,13 @@ class UpdateEvidence(generics.UpdateAPIView):
     required_groups = requiredGroups(permission='change_evidence')
     name = 'evidence-update'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj.reportId.reporterId.personId.id == self.request.user.personId.id:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")
 
 class DeleteEvidence(generics.DestroyAPIView):
     queryset = Evidence.objects.all()
@@ -53,6 +60,13 @@ class DeleteEvidence(generics.DestroyAPIView):
     required_groups = requiredGroups(permission='delete_evidence')
     name = 'delete-evidence'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj.reportId.reporterId.personId.id == self.request.user.personId.id:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")
 
 class CreateEvidence(generics.CreateAPIView):
     queryset = Evidence.objects.all()

@@ -35,6 +35,16 @@ class ReporterList(generics.ListAPIView):
 
     #you can order using the "ordering" keyword
     ordering_fields =  ('contactId__id','personId__id',) 
+    def get_queryset(self):
+        person = self.request.user.personId
+        if self.request.user.is_superuser:
+            return self.queryset
+        elif self.request.user.roleId.name == 'case_worker':
+            return self.queryset
+        elif person is not None:
+            return self.queryset.filter(personId=person.id)
+        else:
+            raise PermissionDenied("You don't have access right")
 
 
 class UpdateReporter(generics.UpdateAPIView):
@@ -44,6 +54,13 @@ class UpdateReporter(generics.UpdateAPIView):
     required_groups = requiredGroups(permission='change_reporter')
     name = 'reporter-update'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj.personId.id == self.request.user.personId.id:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")
 
 class DeleteReporter(generics.DestroyAPIView):
     queryset = Reporter.objects.all()
@@ -52,6 +69,13 @@ class DeleteReporter(generics.DestroyAPIView):
     required_groups = requiredGroups(permission='delete_reporter')
     name = 'reporter-delete'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj.personId.id == self.request.user.personId.id:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")
 
 class CreateReporter(generics.CreateAPIView):
     queryset = Reporter.objects.all()

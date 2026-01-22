@@ -41,6 +41,16 @@ class MessageList(generics.ListAPIView):
 
     #you can order using the "ordering" keyword
     ordering_fields = ('title','detail','recipients','senderId__id','date')
+    def get_queryset(self):
+        person = self.request.user.personId
+        if self.request.user.is_superuser:
+            return self.queryset
+        elif self.request.user.roleId.name == 'case_worker':
+            return self.queryset
+        elif person is not None:
+            return self.queryset.filter(senderId=person.id)
+        else:
+            raise PermissionDenied("You don't have access right")
 
 
 class DeleteMessage(generics.DestroyAPIView):
@@ -50,6 +60,13 @@ class DeleteMessage(generics.DestroyAPIView):
     required_groups = requiredGroups(permission='delete_message')
     name = 'delete-message'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj.senderId.id == self.request.user.personId.id:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")
 
 class SendSMS(generics.CreateAPIView):
     """

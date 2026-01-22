@@ -44,6 +44,13 @@ class UpdateReport(generics.UpdateAPIView):
     required_groups = requiredGroups(permission='change_report')
     name = 'report-update'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj.reporterId.personId.id == self.request.user.personId.id:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")
 
 class DeleteReport(generics.DestroyAPIView):
     queryset = Report.objects.all()
@@ -52,6 +59,13 @@ class DeleteReport(generics.DestroyAPIView):
     required_groups = requiredGroups(permission='delete_report')
     name = 'report-delete'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj.reporterId.personId.id == self.request.user.personId.id:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")
 
 class CreateReport(generics.CreateAPIView):
     queryset = Report.objects.all()

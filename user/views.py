@@ -40,6 +40,17 @@ class UserList(generics.ListAPIView):
     #you can order using the "ordering" keyword
     ordering_fields =  ('username','email','personId__id','roleId__id') 
 
+    def get_queryset(self):
+        person = self.request.user.personId
+        if self.request.user.is_superuser:
+            return self.queryset
+        elif self.request.user.roleId.name == 'case_worker':
+            return self.queryset
+        elif person is not None:
+            return self.queryset.filter(personId=person.id)
+        else:
+            raise PermissionDenied("You don't have access right")
+
 
 class UpdateUser(generics.UpdateAPIView):
     queryset = User.objects.all()
@@ -80,8 +91,6 @@ class UpdateUser(generics.UpdateAPIView):
         else:
             obj.is_staff = False
             obj.is_superuser = False
-    
-
 
 class DeleteUser(generics.DestroyAPIView):
     queryset = User.objects.all()
@@ -90,3 +99,10 @@ class DeleteUser(generics.DestroyAPIView):
     required_groups = requiredGroups(permission='delete_user')
     name = 'user-delete'
     lookup_field = "id"
+    def get_object(self):
+        obj = super().get_object()
+        if self.request.user.is_superuser or \
+             obj == self.request.user:
+            return obj
+        else:
+            raise PermissionDenied("You do not have permission to edit this object.")

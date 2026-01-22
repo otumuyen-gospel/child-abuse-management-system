@@ -21,6 +21,6 @@ from .views import *
 urlpatterns = [
     path('views/', WorkerList.as_view(), name='worker-list'),
     path('create/', CreateWorker.as_view(), name='worker-create'),
-    path('delete/<int:id>/', Delete.as_view(), name='worker-delete'),
-    path('update/<int:id>/', UpdateW.as_view(), name='worker-update'),
+    path('delete/<int:id>/', DeleteWorker.as_view(), name='worker-delete'),
+    path('update/<int:id>/', UpdateWorker.as_view(), name='worker-update'),
 ]
