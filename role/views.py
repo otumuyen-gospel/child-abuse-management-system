@@ -41,7 +41,7 @@ class RoleList(generics.ListAPIView):
 class UpdateRole(generics.UpdateAPIView):
     queryset = Role.objects.all()
     serializer_class = RoleSerializers
-    permission_classes = [IsAuthenticated, IsInGroup,]
+    permission_classes = [IsAuthenticated,IsInGroup]
     required_groups = requiredGroups(permission='change_role')
     name = 'role-update'
     lookup_field = "id"
@@ -51,23 +51,24 @@ class UpdateRole(generics.UpdateAPIView):
         self.updateGroup(name=grpName)
         return obj
     def updateGroup(self, name):
-        #delete group if it exist
-        Group.objects.get(name=name).delete()
-        #recreate group
-        newGroupName = self.request.POST.get('name')
-        permissions = self.request.POST.get('permissions')
-        if permissions is not None:
-            newGrp, iscreated = Group.objects.get_or_create(name=newGroupName)
-            lists = permissions.split(',')
-            if iscreated:
-              perms = Permission.objects.filter(codename__in=lists)
-              newGrp.permissions.add(*perms)
+        if Group.objects.filter(name=name).exists():
+            oldGrp = Group.objects.get(name=name)
+            oldGrp.permissions.clear()
+            #recreate group
+            newGroupName = self.request.POST.get('name')
+            permissions = self.request.POST.get('permissions')
+            oldGrp.name = newGroupName
+            if permissions is not None:
+               lists = permissions.split(',')
+               perms = Permission.objects.filter(codename__in=lists)
+               oldGrp.permissions.add(*perms)
+            oldGrp.save()
 
 
 class DeleteRole(generics.DestroyAPIView):
     queryset = Role.objects.all()
     serializer_class = RoleSerializers
-    permission_classes = [IsAuthenticated, IsInGroup,]
+    permission_classes = [IsAuthenticated,IsInGroup]
     required_groups = requiredGroups(permission='delete_role')
     name = 'delete-role'
     lookup_field = "id"
@@ -75,13 +76,15 @@ class DeleteRole(generics.DestroyAPIView):
         obj = super().get_object()
         grpName = obj.name
         #delete group if it exist
-        Group.objects.get(name=grpName).delete()
+        if Group.objects.filter(name=grpName).exists():
+            grp = Group.objects.get(name=grpName)
+            grp.delete()
         return obj
 
 class CreateRole(generics.CreateAPIView):
     queryset = Role.objects.all()
     serializer_class = RoleSerializers
-    permission_classes = [IsAuthenticated, IsInGroup,]
+    permission_classes = [IsAuthenticated,IsInGroup]
     required_groups = requiredGroups(permission='add_role')
     name = 'create-role'
     def create(self, request, *args, **kwargs):
