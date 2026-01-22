@@ -12,6 +12,6 @@ class Screening(models.Model):
     class Meta:
         ordering = ('reportId__id',)
     def __str__(self):
-        return f'{self.reportId.reporterId.personId.firstName} {self.reportId.victimId.personId.lastName}'
+        return f'{self.reportId.reporterId.personId.firstName} {self.reportId.reporterId.personId.lastName}'
 
 auditlog.register(Screening)
