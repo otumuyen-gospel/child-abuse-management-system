@@ -71,9 +71,7 @@ INSTALLED_APPS = [
     'screening',
     'services',
     'worker',
-    
-
-    
+    'evidence', 
 ]
 
 MIDDLEWARE = [

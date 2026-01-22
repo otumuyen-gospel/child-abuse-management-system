@@ -42,5 +42,6 @@ urlpatterns = [
     path("screening/",include('screening.urls'), name="Screenings"),
     path("services/",include('services.urls'), name="Services"),
     path("worker/",include('worker.urls'), name="Workers"),
+     path("evidence/",include('evidence.urls'), name="Evidence"),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
