@@ -93,7 +93,6 @@ class ReporterSignupView(generics.CreateAPIView):
     name='reporter-signup'
     def create(self, request, *args, **kwargs):
         role = Role.objects.get(name='reporter')
-        print(role.id)
         if not role:
             return Response(
                 {'error':'No reporter role found, contact admin'},
@@ -120,9 +119,11 @@ class ReporterSignupView(generics.CreateAPIView):
             gender = request.data.get('gender'),
 
         )
+        data = request.data.copy()
+        data['personId'] = person.id
+        data['roleId'] = role.id
+        request._full_data = data
         serializer = self.serializer_class(data=request.data)
-        serializer.personId = person.id
-        serializer.roleId = role.id
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
