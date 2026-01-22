@@ -1,5 +1,4 @@
 from django.shortcuts import render
-
 # Create your views here.
 from .models import User
 from role.models import Role
@@ -56,21 +55,23 @@ class UpdateUser(generics.UpdateAPIView):
              obj == self.request.user:
             self.updateUserGroup(obj)
             return obj
-        
         else:
             raise PermissionDenied("You do not have permission to edit this object.")
     
     def updateUserGroup(self,obj):
         user = self.queryset.get(pk=obj.id)
         roleId = self.request.data.get('roleId')
+        role = Role.objects.get(pk=roleId)
         if roleId is not None and roleId != user.roleId_id: #user changed role so update role
-            group = Group.objects.get(name=user.roleId.name)
-            role = Role.objects.get(pk=roleId)
-            new_group = Group.objects.get(name=role.name)
-            if group in user.groups.all():
-              user.groups.remove(group)
-              user.groups.add(new_group)
-              self.updateProps(obj=obj, role=role)
+            if user.roleId_id != None and Group.objects.filter(name=user.roleId.name).exists():
+                 group = Group.objects.get(name=user.roleId.name)
+                 if group in user.groups.all():
+                    user.groups.remove(group)
+            if Group.objects.filter(name=role.name).exists():
+                new_group = Group.objects.get(name=role.name)
+                if new_group not in user.groups.all():
+                    user.groups.add(new_group)
+                    self.updateProps(obj=obj, role=role)
               
     def updateProps(self, obj, role):
         if role.name == 'admin':
